@@ -7,22 +7,22 @@ namespace p4g64.configFramework.UI.Common;
 /// A colour, used in structs in memory
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-internal struct Colour
+public struct Colour
 {
-    internal byte R;
-    internal byte G;
-    internal byte B;
-    internal byte A;
+    public byte R;
+    public byte G;
+    public byte B;
+    public byte A;
 }
 
 /// <summary>
 /// A colour with the fields in reverse, used in arguments
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-internal struct RevColour
+public struct RevColour
 {
-    internal byte A;
-    internal byte B;
-    internal byte G;
-    internal byte R;
+    public byte A;
+    public byte B;
+    public byte G;
+    public byte R;
 }

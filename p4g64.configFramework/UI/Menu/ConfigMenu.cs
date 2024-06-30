@@ -9,7 +9,8 @@ using static p4g64.configFramework.UI.Common.Spr;
 using static p4g64.configFramework.Utils;
 
 namespace p4g64.configFramework.UI.Menu;
-internal unsafe class ConfigMenu
+
+public unsafe class ConfigMenu
 {
     private IReloadedHooks _hooks;
 
@@ -28,30 +29,31 @@ internal unsafe class ConfigMenu
         new ControllerMenu()
     };
 
-    internal ConfigMenu(IReloadedHooks hooks)
+    public ConfigMenu(IReloadedHooks hooks)
     {
         _hooks = hooks;
-        
+
         Spr.Initialise(hooks);
-        SigScan("4C 8B DC 55 56 57 41 57", "ConfigMenu::Draw", address =>
-        {
-            _drawHook = hooks.CreateHook<DrawDelegate>(Draw, address).Activate();
-        });
+        SigScan("4C 8B DC 55 56 57 41 57", "ConfigMenu::Draw",
+            address => { _drawHook = hooks.CreateHook<DrawDelegate>(Draw, address).Activate(); });
 
-        SigScan("48 8B C4 48 89 48 ?? 55 53 56 57 41 54 41 55 41 56 41 57 48 8D 68 ?? 48 81 EC D8 00 00 00", "ConfigMenu::Process", address =>
-        {
-            _processHook = hooks.CreateHook<ProcessDelegate>(ProcessFunc, address).Activate();
-        });
+        SigScan("48 8B C4 48 89 48 ?? 55 53 56 57 41 54 41 55 41 56 41 57 48 8D 68 ?? 48 81 EC D8 00 00 00",
+            "ConfigMenu::Process",
+            address => { _processHook = hooks.CreateHook<ProcessDelegate>(ProcessFunc, address).Activate(); });
 
-        SigScan("40 53 48 83 EC 30 48 8B D9 0F 29 74 24 ?? 48 8D 0D ?? ?? ?? ?? 0F 28 F1 E8 ?? ?? ?? ?? 8B 03 A8 04 75 ?? 33 C0 0F 28 74 24 ?? 48 83 C4 30 5B C3 A8 01", "GetComponentFadeState", address =>
-        {
-            _getComponentFadeState = hooks.CreateWrapper<GetComponentFadeStateDelegate>(address, out _);
-        });
+        SigScan(
+            "40 53 48 83 EC 30 48 8B D9 0F 29 74 24 ?? 48 8D 0D ?? ?? ?? ?? 0F 28 F1 E8 ?? ?? ?? ?? 8B 03 A8 04 75 ?? 33 C0 0F 28 74 24 ?? 48 83 C4 30 5B C3 A8 01",
+            "GetComponentFadeState",
+            address =>
+            {
+                _getComponentFadeState = hooks.CreateWrapper<GetComponentFadeStateDelegate>(address, out _);
+            });
 
-        SigScan("48 89 5C 24 ?? 57 48 83 EC 40 0F 29 74 24 ?? 48 89 CB", "CalculateComponentOpacity", address =>
-        {
-            _calculateComponentOpacity = hooks.CreateWrapper<CalculateComponentOpacityDelegate>(address, out _);
-        });
+        SigScan("48 89 5C 24 ?? 57 48 83 EC 40 0F 29 74 24 ?? 48 89 CB", "CalculateComponentOpacity",
+            address =>
+            {
+                _calculateComponentOpacity = hooks.CreateWrapper<CalculateComponentOpacityDelegate>(address, out _);
+            });
     }
 
     private nuint ProcessFunc(ConfigMenuState* state, int* param_2, ConfigMenuInfo* info)
@@ -85,7 +87,8 @@ internal unsafe class ConfigMenu
         var alpha = GetComponentAlpha(&info->TitleComponent, alphaPercent, 5, 10, 0, 5);
         var colour = new Colour { R = 0x5E, G = 0x37, B = 0xFF, A = 0xFF };
 
-        Spr.Draw(info->CMainSpr, 0x112, info->XStart + 26.0f, info->YStart + 229.0f + 2.0f, 0.0f, colour.R, colour.G, colour.B, alpha, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f);
+        Spr.Draw(info->CMainSpr, 0x112, info->XStart + 26.0f, info->YStart + 229.0f + 2.0f, 0.0f, colour.R, colour.G,
+            colour.B, alpha, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f);
     }
 
     private void DrawVisualiser(ConfigMenuInfo* info)
@@ -116,8 +119,22 @@ internal unsafe class ConfigMenu
         // TODO vary based on language like the game does, this code below doesn't seem to work even though I think it's equivalent
         // Search for /* Render the "Apply changed settings" text at the bottom */ in ConfigMenu::Draw
         //byte textSize = (byte)((int)Globals.Language - 5 < 4 ? 2 : 1);
-        byte textSize = 1;
-        Text.Draw(info->XStart + 467, info->YStart + 216, 0, colour, 0, textSize, description, Text.TextPositioning.Left);
+        var lines = description.Split('\n');
+        if (lines.Length == 1)
+        {
+            Text.Draw(info->XStart + 467, info->YStart + 216, 0, colour, 0, 1, description,
+                Text.TextPositioning.Left);
+            return;
+        }
+        
+        // This will only really look right with 2 lines 
+        var lineY = info->YStart + 216 - 10;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            Text.Draw(info->XStart + 467, lineY, 0, colour, 0, 2, lines[i],
+                Text.TextPositioning.Left);
+            lineY += 12;
+        }
     }
 
     private void DrawOptions(ConfigMenuInfo* info)
@@ -158,13 +175,16 @@ internal unsafe class ConfigMenu
         float xPos = 29.0f;
         for (int i = 0; i < 6; i++)
         {
-            var colour = i == (int)info->CurrentTab ?
-                new Colour { R = 0x2D, G = 0x2D, B = 0x2D, A = 0xFF } :
-                new Colour { R = 0xAD, G = 0xAD, B = 0xAD, A = 0xFF };
+            var colour = i == (int)info->CurrentTab
+                ? new Colour { R = 0x2D, G = 0x2D, B = 0x2D, A = 0xFF }
+                : new Colour { R = 0xAD, G = 0xAD, B = 0xAD, A = 0xFF };
 
-            Spr.Draw(info->CMainSpr, i + 0x2f3, xPos, 3, 0.0f, colour.R, colour.G, colour.B, alpha, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f);
+            Spr.Draw(info->CMainSpr, i + 0x2f3, xPos, 3, 0.0f, colour.R, colour.G, colour.B, alpha, 1.0f, 1.0f, 0.0f,
+                0.0f, 0.0f);
             xPos += 70;
-        };
+        }
+
+        ;
     }
 
 
@@ -178,7 +198,8 @@ internal unsafe class ConfigMenu
     /// <param name="fadeOut1">The second argument to CalculateComponentOpacity when fading out (TODO find out what ths means)</param>
     /// <param name="fadeOut2">The third argument to CalculateComponentOpacity when fading out (TODO find out what ths means)</param>
     /// <returns></returns>
-    private byte GetComponentAlpha(MenuComponent* component, float alphaPercent, float fadeIn1, float fadeIn2, float fadeOut1, float fadeOut2)
+    private byte GetComponentAlpha(MenuComponent* component, float alphaPercent, float fadeIn1, float fadeIn2,
+        float fadeOut1, float fadeOut2)
     {
         var fadeState = _getComponentFadeState(component, 0.5f);
         uint alpha = 255;
@@ -198,9 +219,13 @@ internal unsafe class ConfigMenu
 
 
     private delegate void DrawDelegate(ConfigMenuInfo* info);
+
     private delegate nuint ProcessDelegate(ConfigMenuState* state, int* param_2, ConfigMenuInfo* info);
+
     private delegate MenuComponentFadeState GetComponentFadeStateDelegate(MenuComponent* component, float param_2);
-    private delegate float CalculateComponentOpacityDelegate(MenuComponent* component, float param_2, float param_3, int param_4);
+
+    private delegate float CalculateComponentOpacityDelegate(MenuComponent* component, float param_2, float param_3,
+        int param_4);
 
     /// <summary>
     /// The index of sprites inside of c_main01x2.spr
@@ -224,60 +249,46 @@ internal unsafe class ConfigMenu
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    internal struct ConfigMenuInfo
+    public struct ConfigMenuInfo
     {
-        [FieldOffset(0)]
-        internal byte Alpha;
+        [FieldOffset(0)] public byte Alpha;
 
-        [FieldOffset(4)]
-        internal float XStart;
+        [FieldOffset(4)] public float XStart;
 
-        [FieldOffset(8)]
-        internal float YStart;
+        [FieldOffset(8)] public float YStart;
 
-        [FieldOffset(0x14)]
-        internal int field0x14;
+        [FieldOffset(0x14)] public int field0x14;
 
-        [FieldOffset(0x30)]
-        internal int SelectedOption;
+        [FieldOffset(0x30)] public int SelectedOption;
 
-        [FieldOffset(0x34)]
-        internal int OptionOffset;
+        [FieldOffset(0x34)] public int OptionOffset;
 
-        [FieldOffset(0x38)]
-        internal ConfigTab CurrentTab;
+        [FieldOffset(0x38)] public ConfigTab CurrentTab;
 
-        [FieldOffset(0x1b8)]
-        internal SpriteFile* CMainSpr;
+        [FieldOffset(0x1b8)] public SpriteFile* CMainSpr;
 
-        [FieldOffset(0x1f0)]
-        internal MenuComponent TitleComponent;
+        [FieldOffset(0x1f0)] public MenuComponent TitleComponent;
 
-        [FieldOffset(0x1d8)]
-        internal MenuComponent VisualiserComponent;
+        [FieldOffset(0x1d8)] public MenuComponent VisualiserComponent;
 
-        [FieldOffset(0x208)]
-        internal MenuComponent DescriptionComponent;
+        [FieldOffset(0x208)] public MenuComponent DescriptionComponent;
 
-        [FieldOffset(0x1c0)]
-        internal MenuComponent OptionsComponent;
+        [FieldOffset(0x1c0)] public MenuComponent OptionsComponent;
 
-        [FieldOffset(0x220)]
-        internal MenuComponent ButtonHintsComponent;
+        [FieldOffset(0x220)] public MenuComponent ButtonHintsComponent;
 
-        [FieldOffset(0x2b0)]
-        internal MenuComponent HeaderComponent;
+        [FieldOffset(0x2b0)] public MenuComponent HeaderComponent;
     }
 
-    internal struct MenuComponent
+    public struct MenuComponent
     {
-        internal uint field0;
-        internal float field1;
-        internal float field2;
-        internal float field3;
+        public uint field0;
+        public float field1;
+        public float field2;
+        public float field3;
     }
 
-    internal enum MenuComponentFadeState : int
+    public enum MenuComponentFadeState : int
     {
         Hidden,
         FadeIn,
@@ -285,7 +296,7 @@ internal unsafe class ConfigMenu
         Static
     }
 
-    internal enum ConfigTab : int
+    public enum ConfigTab : int
     {
         Audio,
         Game,

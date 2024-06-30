@@ -14,6 +14,8 @@ public unsafe class Spr
     // TODO work out the atual difference and give this a proper name
     public static DrawWrappedDelegate DrawWrapped;
 
+    public static DrawRectangleDelegate DrawRectangle;
+
     public static void Initialise(IReloadedHooks hooks)
     {
         SigScan("48 8B C4 55 53 57 48 8D A8 ?? ?? ?? ?? 48 81 EC 40 03 00 00", "Spr::Draw", address =>
@@ -24,6 +26,12 @@ public unsafe class Spr
         SigScan("48 8B C4 48 89 58 ?? 57 48 81 EC B0 00 00 00 0F 29 70 ?? 48 8B F9 0F 29 78 ?? 48 8D 0D ?? ?? ?? ?? 44 0F 29 40 ?? 8B DA", "Spr::DrawWrapped", address =>
         {
             DrawWrapped = hooks.CreateWrapper<DrawWrappedDelegate>(address, out _);
+        });
+
+        SigScan("E8 ?? ?? ?? ?? 0F B6 44 24 ?? 0F 28 DE F3 0F 58 1D ?? ?? ?? ??", "DrawRectangle Ptr", address =>
+        {
+            var funcAddress = GetGlobalAddress(address + 1);
+            DrawRectangle = hooks.CreateWrapper<DrawRectangleDelegate>((long)funcAddress, out _);
         });
     }
 
@@ -50,6 +58,17 @@ public unsafe class Spr
 
     public delegate void DrawWrappedDelegate(SpriteFile* spr, int spriteIndex, float xPos, float yPos, float param_5, 
                 byte colourR, byte colourG, byte colourB, byte colourA, float param_10, float param_11, float rotation);
+
+    public delegate void DrawRectangleDelegate(Colour* colour, Rectangle* rect, float param_3);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Rectangle
+    {
+        public float X1;
+        public float Y1;
+        public float X2;
+        public float Y2;
+    }
 
     [StructLayout(LayoutKind.Explicit)]
     public struct SpriteFile

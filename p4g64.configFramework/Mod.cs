@@ -5,6 +5,7 @@ using p4g64.configFramework.UI.Menu;
 using Reloaded.Hooks.ReloadedII.Interfaces;
 using Reloaded.Mod.Interfaces;
 using System.Diagnostics;
+using p4g64.configFramework.Native;
 using static p4g64.configFramework.Utils;
 
 namespace p4g64.configFramework;
@@ -59,6 +60,8 @@ public class Mod : ModBase // <= Do not Remove.
         Initialise(_logger, _configuration, _modLoader);
         Globals.Initialise();
         Text.Initialise(_hooks!);
+        Inputs.Initialise();
+        Sound.Initialise(_hooks!);
         _configMenu = new ConfigMenu(_hooks!);
     }
 

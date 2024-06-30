@@ -13,10 +13,15 @@ public abstract unsafe class BaseMenuOption : IMenuOption
     public abstract string Name { get; }
 
     public abstract string Description { get; }
+    
+    public abstract bool Readonly { get; }
+    
+    public abstract bool StaySelected { get; }
 
     public abstract void Draw(float xPos, float yPos, byte alpha, SpriteFile* cMainSpr, bool isSelected);
-    public abstract void KeyPressed(int key);
 
+    public abstract void Process();
+    
     // Draw a standard background for the option
     protected void DrawOptionBg(SpriteFile* cMainSpr, byte alpha, float xPos, float yPos, bool isSelected)
     {

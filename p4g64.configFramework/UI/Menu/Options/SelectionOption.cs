@@ -1,5 +1,7 @@
 ﻿using p4g64.configFramework.UI.Common;
 using static p4g64.configFramework.UI.Common.Spr;
+using static p4g64.configFramework.Native.Inputs;
+using static p4g64.configFramework.Native.Sound;
 
 namespace p4g64.configFramework.UI.Menu.Options;
 
@@ -11,17 +13,22 @@ public unsafe class SelectionOption : BaseMenuOption
     public override string Name { get; }
 
     public override string Description { get; }
+    
+    public override bool Readonly { get; }
 
+    public override bool StaySelected => false;
+    
     public string[] Options { get; }
 
-    private int _selectedOption;
+    private int _selectedIndex;
 
-    public SelectionOption(string name, string description, string[] options, int selectedOption)
+    public SelectionOption(string name, string description, string[] options, string initialValue, bool isReadonly = false)
     {
         Name = name;
         Description = description;
+        Readonly = isReadonly;
         Options = options;
-        _selectedOption = selectedOption;
+        _selectedIndex = Array.IndexOf(options, initialValue);
     }
 
     public override void Draw(float xPos, float yPos, byte alpha, SpriteFile* cMainSpr, bool isSelected)
@@ -48,7 +55,7 @@ public unsafe class SelectionOption : BaseMenuOption
     {
         RevColour textColour = new RevColour { R = 0x2D, G = 0x2D, B = 0x2D, A = alpha };
 
-        var option = Options[_selectedOption];
+        var option = Options[_selectedIndex];
 
         var optionWidth = Text.GetWidth(1000.0f, 1000.0f, 0, textColour, 0, 1, option, 1);
         byte textSize = 1;
@@ -68,11 +75,45 @@ public unsafe class SelectionOption : BaseMenuOption
             yOffset = 2.5f;
 
         Text.Draw(xPos + 393.0f, yPos + 6 + yOffset, 0, textColour, 0, textSize, option, Text.TextPositioning.Center);
-
     }
-
-    public override void KeyPressed(int key)
+    
+    public override void Process()
     {
-        // TODO implement
+        if (IsHeld(Input.Left) && Options.Length > 1)
+        {
+            if (_selectedIndex > 0)
+            {
+                PlaySoundEffect(SoundEffect.SelectionMoved);
+                _selectedIndex--;
+            }
+            else
+            {
+                // Only wrap around if you press the button, not holding it
+                if (IsPressed(Input.Left))
+                {
+                    PlaySoundEffect(SoundEffect.SelectionMoved);
+                    _selectedIndex = Options.Length - 1;
+                }
+            }
+        }
+
+        if (IsHeld(Input.Right) && Options.Length > 1)
+        {
+            if (_selectedIndex < Options.Length - 1)
+            {
+                PlaySoundEffect(SoundEffect.SelectionMoved);
+                _selectedIndex++;
+            }
+            else
+            {
+                // Only wrap around if you press the button, not holding it
+                if (IsPressed(Input.Right))
+                {
+                    PlaySoundEffect(SoundEffect.SelectionMoved);
+                    _selectedIndex = 0;
+                }
+            }
+        }
+
     }
 }

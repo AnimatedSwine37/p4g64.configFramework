@@ -1,5 +1,6 @@
 ﻿using p4g64.configFramework.UI.Common;
 using static p4g64.configFramework.UI.Common.Spr;
+using static p4g64.configFramework.Native.Inputs;
 
 namespace p4g64.configFramework.UI.Menu.Options;
 public unsafe class BoolOption : BaseMenuOption
@@ -8,15 +9,19 @@ public unsafe class BoolOption : BaseMenuOption
 
     public override string Description { get; }
 
-    // TODO decide whether value should be publicly available and if so how to do that.
-    // We can't do a list of IMenuOption if it is a generic it seems
-    public bool Value { get; set; }
+    public override bool Readonly { get; }
 
-    public BoolOption(string name, string description, bool value)
+    public override bool StaySelected => false;
+    
+    public bool Value { get; set; }
+    
+
+    public BoolOption(string name, string description, bool value, bool isReadonly = false)
     {
         Name = name;
         Description = description;
         Value = value;
+        Readonly = isReadonly;
     }
 
     public override void Draw(float xPos, float yPos, byte alpha, SpriteFile* cMainSpr, bool isSelected)
@@ -41,9 +46,10 @@ public unsafe class BoolOption : BaseMenuOption
         RevColour textColour = new RevColour { R = 0x2D, G = 0x2D, B = 0x2D, A = alpha };
         Text.Draw(xPos + 393.0f, yPos + 6, 0, textColour, 0, 1, text, Text.TextPositioning.Center);
     }
-
-    public override void KeyPressed(int key)
+    
+    public override void Process()
     {
-        // TODO implement
+        if (IsPressed(Input.Left) || IsPressed(Input.Right))
+            Value = !Value;
     }
 }
